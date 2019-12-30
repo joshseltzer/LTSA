@@ -3,7 +3,6 @@ import numpy as np
 from numpy.fft import rfft
 from scipy.io.wavfile import read as wavread
 import matplotlib.pyplot as plt
-from scipy.misc import imresize
 from numbers import Number
 
 class LTSA():
@@ -33,7 +32,7 @@ class LTSA():
 
         Example input:
         var_dict = {'div_len':8192, 'subdiv_len':1024}
-        
+
         *var_dict*
         Dictionary containing names and values of parameters to set
 
@@ -100,7 +99,7 @@ class LTSA():
 
         return div_low, div_high, freq_low, freq_high
 
-        
+
     def _set_nvals(self):
         '''
         Computes and sets the nsamples, ndivs, and nsubdivs attributes
@@ -116,7 +115,7 @@ class LTSA():
         methods.
 
         This method should be run by the constructor once the signal data and
-        sampling frequency have been populated. 
+        sampling frequency have been populated.
         '''
         # defaults for LTSA algorithm parameters
         self.div_len = np.round(self.fs/2) # half second divisions
@@ -132,56 +131,14 @@ class LTSA():
         self.fmin = 0
         self.fmax = np.floor(self.fs / 2)
 
-    def show(self, resize=None, interp='bilinear'):
+    def show(self):
         '''
         Displays the LTSA image in the current axis using
         matplotlib.pyplot.imshow(). It is often useful to manually adjust the
         color axis using pyplot.clim(), as the default clim is usually wider
         than it should be
-
-        *resize*
-        This argument controls what image resizing will be applied to the ltsa
-        array before it is displayed. There are several possible types that can
-        be passed as resize depending on the desired behavior:
-            
-            None
-            No resizing action is taken
-
-            (int, int)
-            scipy.misc.imresize is called -> imresize(self.ltsa, resize, interp)
-
-            int
-            The frequency axis is downsampled such that it's length is resize.
-            Currently this uses no lowpass filtering or interpolation so the
-            results may show some jaggedness but it is not typically a problem
-
-        *interp*
-        Only used when imresize is called. Determines the type of interpolation
-        used in resizing. See the scipy.misc.imresize function for more
-        information.
         '''
-        if isinstance(resize, tuple) and len(resize) == 2:
-            # use scipy.misc.imresize
-            img = imresize(self.ltsa, resize, interp)
-
-        elif isinstance(resize, int):
-            # downsample (without lowpass filtering)
-            if resize < 1 or resize > self.ltsa.shape[0]:
-                raise ValueError('resize out of range: %s' % str(resize))
-
-            h = resize # img height in pixels
-            idx = np.floor(np.linspace(0, np.size(self.ltsa, 0)-1, h))
-            idx = np.int32(idx)
-            img = np.zeros((h, np.size(self.ltsa, 1)))
-            for i in xrange(int(np.size(self.ltsa, 1))):
-                img[:,i] = self.ltsa[idx,i] 
-
-        elif resize is None:
-            img = self.ltsa
-
-        else:
-            raise TypeError('resize not of acceptable type: %s' % str(resize))
-
+        img = self.ltsa
         # set correct labels on image
         ext = (self.tmin, self.tmax, self.fmin, self.fmax)
         self.handle = plt.imshow(img, origin='lower', extent=ext, aspect='auto')
@@ -196,10 +153,10 @@ class LTSA():
         '''
         self.compute()
 
-    def compute(self): 
+    def compute(self):
         '''
         This method executes the LTSA algorithm. The result is a grayscale
-        image (2D numpy array) which is assigned to the self.ltsa attribute. 
+        image (2D numpy array) which is assigned to the self.ltsa attribute.
 
         All the data that this method needs is provided ahead of time by the
         constructor and/or the set_params method.
@@ -222,7 +179,7 @@ class LTSA():
     def _calc_spectrum(self, div):
         '''
         This function is used by compute() to determine the approximate
-        frequency content of one division of audio data. 
+        frequency content of one division of audio data.
         '''
         spectrum = np.zeros((self.nfft/2,))
         window = np.hanning(self.subdiv_len)
@@ -244,7 +201,7 @@ class LTSA():
         spectrum = np.single(np.log(spectrum / self.nsubdivs))
         return spectrum
 
-    def scale_to_uint8(self): 
+    def scale_to_uint8(self):
         '''
         Rescales self.ltsa to fit into unsigned 8 bit integers and converts the
         data type of self.ltsa to np.uint8
@@ -269,10 +226,10 @@ class LTSA():
         '''
         Equality is tested by checking the computed self.ltsa arrays. All
         elements of self.ltsa must equal the corresponding element in
-        other.ltsa for equality.  
+        other.ltsa for equality.
 
-        Equality testing will return False unless it can verify that 
-        self.ltsa == other.ltsa 
+        Equality testing will return False unless it can verify that
+        self.ltsa == other.ltsa
         '''
         try:
             return (self.ltsa == other.ltsa).all()
@@ -284,7 +241,7 @@ class LTSA():
         Returns the opposite of __eq__
         '''
         return not self.__eq__(self, other)
-    
+
 class WavLTSA(LTSA):
     '''
     Long-Term Spectral Average
@@ -303,7 +260,7 @@ class WavLTSA(LTSA):
 
     The computation is run with compute() or __call__ and the resulting image
     is stored in the ltsa attribute. The crop() method crops the image to a
-    specified time/frequency space. 
+    specified time/frequency space.
 
     show() displays the LTSA in the current figure using pyplot.imshow() and
     has optional resizing arguments.
@@ -323,7 +280,7 @@ class WavLTSA(LTSA):
         self._init_params()
 
 
-    
+
 class RawLTSA(LTSA):
     '''
     Long-Term Spectral Average
@@ -340,7 +297,7 @@ class RawLTSA(LTSA):
 
     The computation is run with compute() or __call__ and the resulting image
     is stored in the ltsa attribute. The crop() method crops the image to a
-    specified time/frequency space. 
+    specified time/frequency space.
 
     show() displays the LTSA in the current figure using pyplot.imshow() and
     has optional resizing arguments.
@@ -355,4 +312,3 @@ class RawLTSA(LTSA):
             self.fs = fs
 
         self._init_params()
-
