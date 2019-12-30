@@ -1,6 +1,9 @@
 from matplotlib.pyplot import show, colorbar
 from ltsa import WavLTSA
 
+# generates LTSAs for all .wav files in a specified directory
+dir = '/Users/josh/OWL/Data/ACTIVE_WAV'
+
 # initialize the object with raw data from wav file
 s = WavLTSA('/Users/josh/OWL/Data/MANUAL_LABEL_DATA/archive/SWIFT10_20190325_190000.wav')
 
