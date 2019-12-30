@@ -143,6 +143,7 @@ class LTSA():
         '''
         self.render()
         plt.savefig(fn, dpi=dpi)
+        plt.close()
 
     def show(self):
         '''
@@ -150,6 +151,7 @@ class LTSA():
         '''
         self.render()
         plt.show()
+        plt.close()
 
 
     def render(self):
