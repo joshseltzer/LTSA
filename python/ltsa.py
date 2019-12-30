@@ -131,7 +131,28 @@ class LTSA():
         self.fmin = 0
         self.fmax = np.floor(self.fs / 2)
 
+    def save(self, fn="output_ltsa.pdf", dpi=600):
+        '''
+        Renders and saves the LTSA image to a file.
+
+        *fn*
+        filename to save to
+
+        *dpi*
+        dots per inch (resolution) to save
+        '''
+        self.render()
+        plt.savefig(fn, dpi=dpi)
+
     def show(self):
+        '''
+        Renders and shows the LTSA image.
+        '''
+        self.render()
+        plt.show()
+
+
+    def render(self):
         '''
         Displays the LTSA image in the current axis using
         matplotlib.pyplot.imshow(). It is often useful to manually adjust the
@@ -144,6 +165,7 @@ class LTSA():
         self.handle = plt.imshow(img, origin='lower', extent=ext, aspect='auto')
         plt.xlabel('Time (seconds)')
         plt.ylabel('Frequency (Hertz)')
+        plt.colorbar()
 
         return img
 
@@ -262,7 +284,7 @@ class WavLTSA(LTSA):
     is stored in the ltsa attribute. The crop() method crops the image to a
     specified time/frequency space.
 
-    show() displays the LTSA in the current figure using pyplot.imshow() and
+    render() displays the LTSA in the current figure using pyplot.imshow() and
     has optional resizing arguments.
     '''
     # initialize with default parameters
@@ -299,7 +321,7 @@ class RawLTSA(LTSA):
     is stored in the ltsa attribute. The crop() method crops the image to a
     specified time/frequency space.
 
-    show() displays the LTSA in the current figure using pyplot.imshow() and
+    render() displays the LTSA in the current figure using pyplot.imshow() and
     has optional resizing arguments.
     '''
     # initialize with default parameters
