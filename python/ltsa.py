@@ -37,8 +37,10 @@ class LTSA():
         Dictionary containing names and values of parameters to set
 
         '''
-        for key, val in var_dict.iteritems():
+        for key, val in var_dict.items():
             vars(self)[key] = val
+            if (key == 'nfft'):
+                vars(self)['halfnfft'] = int(np.floor(val/2))
 
         self._set_nvals()
 
@@ -87,14 +89,15 @@ class LTSA():
 
         # crop time axis
         divs_per_second = self.fs / self.div_len
-        div_low = np.floor(tmin * divs_per_second)
-        div_high = np.ceil(tmax * divs_per_second) + 1
+        div_low = int(np.floor(tmin * divs_per_second))
+        div_high = int(np.ceil(tmax * divs_per_second) + 1)
+        print("self.ltsa:", self.ltsa)
         self.ltsa = self.ltsa[:, div_low:div_high]
 
         # crop frequency axis
         pixels_per_hz = self.ltsa.shape[0] / (self.fs/2)
-        freq_low = np.floor(fmin * pixels_per_hz)
-        freq_high = np.ceil(fmax * pixels_per_hz) + 1
+        freq_low = int(np.floor(fmin * pixels_per_hz))
+        freq_high = int(np.ceil(fmax * pixels_per_hz) + 1)
         self.ltsa = self.ltsa[freq_low:freq_high, :]
 
         return div_low, div_high, freq_low, freq_high
@@ -105,7 +108,7 @@ class LTSA():
         Computes and sets the nsamples, ndivs, and nsubdivs attributes
         '''
         self.nsamples = self.signal.size
-        self.ndivs = np.floor(self.nsamples / self.div_len)
+        self.ndivs = int(np.floor(self.nsamples / self.div_len))
         self.nsubdivs = np.floor(self.div_len / (self.subdiv_len - self.noverlap))
 
     def _init_params(self):
@@ -121,6 +124,7 @@ class LTSA():
         self.div_len = np.round(self.fs/2) # half second divisions
         self.subdiv_len = 2**np.round(np.log2(self.fs/5))
         self.nfft = None # will be checked and assigned in the compute method
+        self.halfnfft = None
         self.noverlap = 0
 
         self._set_nvals()
@@ -164,7 +168,7 @@ class LTSA():
         img = self.ltsa
         # set correct labels on image
         ext = (self.tmin, self.tmax, self.fmin, self.fmax)
-        self.handle = plt.imshow(img, origin='lower', extent=ext, aspect='auto')
+        self.handle = plt.imshow(img, origin='lower', extent=ext, aspect='auto', cmap='jet')
         plt.xlabel('Time (seconds)')
         plt.ylabel('Frequency (Hertz)')
         plt.colorbar()
@@ -191,12 +195,13 @@ class LTSA():
 
         if self.nfft is None:
             self.nfft = self.subdiv_len
+            self.halfnfft = int(np.floor(self.nfft/2))
         self.signal = self.signal[: self.ndivs * self.div_len]
         self.tmax = len(self.signal) / self.fs
-        self.ltsa = np.zeros((self.nfft/2, self.ndivs), dtype=np.single)
+        self.ltsa = np.zeros((self.halfnfft, self.ndivs), dtype=np.single)
         divs = np.reshape(self.signal, (self.ndivs, self.div_len)).T
 
-        for i in xrange(int(self.ndivs)):
+        for i in range(int(self.ndivs)):
             div = divs[:,i]
             self.ltsa[:,i] = self._calc_spectrum(div)
 
@@ -205,7 +210,7 @@ class LTSA():
         This function is used by compute() to determine the approximate
         frequency content of one division of audio data.
         '''
-        spectrum = np.zeros((self.nfft/2,))
+        spectrum = np.zeros((self.halfnfft,))
         window = np.hanning(self.subdiv_len)
         slip = self.subdiv_len - self.noverlap
         if slip <= 0:
@@ -218,7 +223,7 @@ class LTSA():
             nsubdivs += 1
             subdiv = div[lo:hi]
             tr = rfft(subdiv * window, int(self.nfft))
-            spectrum += np.abs(tr[:self.nfft/2])
+            spectrum += np.abs(tr[:self.halfnfft])
             lo += slip
             hi += slip
 
